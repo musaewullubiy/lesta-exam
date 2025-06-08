@@ -5,6 +5,8 @@ import os
 
 db = SQLAlchemy()
 
+from .models import Submission
+
 def create_app():
     app = Flask(__name__)
 
