@@ -4,6 +4,9 @@ pipeline {
         DOCKER_IMAGE = "lesta-project-web"
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         SSH_CREDENTIALS_ID = "remote-ssh-credentials"
+        REMOTE_HOST = "37.9.53.232"
+        REMOTE_DIR = "/home/ubuntu/EXAM"
+        REMOTE_USER = "ubuntu"
     }
     stages {
         stage('Checkout') {
@@ -20,7 +23,11 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: "${SSH_CREDENTIALS_ID}", keyFileVariable: 'SSH_KEY', usernameVariable: 'REMOTE_USER')]) {
                     sh """
-                    scp -i ${SSH_KEY} -o StrictHostKeyChecking=no docker-compose.yml ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
+                    rsync -avz -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" \
+                        --exclude='.git' \
+                        --exclude='.env' \
+                        ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
+                    
                     ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << 'EOF'
                         cd ${REMOTE_DIR}
                         docker-compose down || true
