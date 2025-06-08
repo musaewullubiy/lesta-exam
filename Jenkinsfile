@@ -4,9 +4,6 @@ pipeline {
         DOCKER_IMAGE = "lesta-project-web"
         DOCKER_TAG = "${env.BUILD_NUMBER}"
         SSH_CREDENTIALS_ID = "remote-ssh-credentials"
-        REMOTE_HOST = "37.9.53.232"
-        REMOTE_DIR = "/home/ubuntu/EXAM"
-        REMOTE_USER = "ubuntu"
     }
     stages {
         stage('Checkout') {
@@ -20,27 +17,28 @@ pipeline {
             }
         }
         stage('Deploy') {
-            steps {
-                withCredentials([sshUserPrivateKey(credentialsId: "${SSH_CREDENTIALS_ID}", keyFileVariable: 'SSH_KEY', usernameVariable: 'REMOTE_USER')]) {
-                    sh """
-                    rsync -avz -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" \
-                        --exclude='.git' \
-                        --exclude='.env' \
-                        ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
-                    
-                    ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << 'EOF'
-                        cd ${REMOTE_DIR}
-                        docker-compose down || true
-                        docker-compose up -d --build
-                        docker-compose exec -T web flask db init || true
-                        docker-compose exec -T web flask db migrate
-                        docker-compose exec -T web flask db upgrade
-                    EOF
-                    """
-                }
-            }
+    steps {
+        withCredentials([sshUserPrivateKey(credentialsId: "${SSH_CREDENTIALS_ID}", keyFileVariable: 'SSH_KEY', usernameVariable: 'REMOTE_USER')]) {
+            sh """
+            rsync -avz -e "ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no" \
+                --exclude='.git' \
+                --exclude='.env' \
+                ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
+            
+            ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << 'EOF'
+                cd ${REMOTE_DIR}
+                docker-compose down || true
+                docker-compose up -d --build
+                sleep 10
+                
+                docker-compose exec -T web flask db init || true
+                docker-compose exec -T web flask db migrate -m "Initial migration"
+                docker-compose exec -T web flask db upgrade
+            EOF
+            """
         }
     }
+}
     post {
         always {
             sh 'docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true'
