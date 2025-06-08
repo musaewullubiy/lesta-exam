@@ -29,11 +29,6 @@ pipeline {
                         cd ${REMOTE_DIR}
                         docker-compose down || true
                         docker-compose up -d --build
-                        sleep 10
-                        
-                        docker-compose exec -T web flask db init || true
-                        docker-compose exec -T web flask db migrate -m "Initial migration"
-                        docker-compose exec -T web flask db upgrade
                     EOF
                     """
                 }
@@ -43,12 +38,6 @@ pipeline {
     post {
         always {
             sh 'docker rmi ${DOCKER_IMAGE}:${DOCKER_TAG} || true'
-        }
-        failure {
-            echo 'Сборка или деплой упали!'
-        }
-        success {
-            echo 'Сборка и деплой прошли успешно!'
         }
     }
 }
