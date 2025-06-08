@@ -19,11 +19,9 @@ pipeline {
         stage('Deploy') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: "${SSH_CREDENTIALS_ID}", keyFileVariable: 'SSH_KEY', usernameVariable: 'REMOTE_USER')]) {
-                    sh '''
-                    scp -i ${SSH_KEY} docker-compose.yml ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
-                    scp -i ${SSH_KEY} .env ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
-                    ssh -i ${SSH_KEY} ${REMOTE_USER}@${REMOTE_HOST} << 'EOF'
-                        mkdir -p ${REMOTE_DIR}
+                    sh """
+                    scp -i ${SSH_KEY} -o StrictHostKeyChecking=no docker-compose.yml ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
+                    ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} << 'EOF'
                         cd ${REMOTE_DIR}
                         docker-compose down || true
                         docker-compose up -d --build
@@ -31,7 +29,7 @@ pipeline {
                         docker-compose exec -T web flask db migrate
                         docker-compose exec -T web flask db upgrade
                     EOF
-                    '''
+                    """
                 }
             }
         }
