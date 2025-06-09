@@ -27,7 +27,7 @@ pipeline {
                     
                     ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                         cd ${REMOTE_DIR}
-                        docker-compose down -v || true
+                        docker-compose down || true
                         docker-compose up -d --build
                     '
                     """
