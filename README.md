@@ -135,3 +135,9 @@ Backend API для экзаменационного проекта, постро
   ```bash
   docker logs lesta-project_db_1
   ```
+
+## Эндпоинты:
+```
+http://37.9.53.232/ping
+http://37.9.53.232/results
+```
